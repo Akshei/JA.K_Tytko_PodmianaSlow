@@ -1,0 +1,1 @@
+Program pobierajacy tekst z pliku, podmieniajacy wybrane przez uzystkownika slowo na inne wybrane przez uzyktownika slowo i zapisujacy tekst do tego pliku.
