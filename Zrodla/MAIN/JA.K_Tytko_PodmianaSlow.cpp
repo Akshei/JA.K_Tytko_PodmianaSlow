@@ -9,12 +9,16 @@
 #include <vector>
 #include <windows.h>
 #include <process.h>
-#include "dll_cpp\cppdll.h"
+#include "../cppdll/cppdll.h"
+
+typedef DWORD(*asmFunction)();
+
 using namespace std;
 
 vector<string> tekst;
 int index = 0;
 string slowoDoZamiany,slowoNaZmiane;
+asmFunction asmFunc;
 
 void halp(){
 	cout << endl << endl;
@@ -41,7 +45,7 @@ void __cdecl ThreadProcCpp(void * Args)
 	char zwrot[255] = ""; 
 	int i = index++;
 	while ( i < tekst.size()){
-		string x(changeAllTheWords(tekst[i].c_str(), slowoDoZamiany.c_str(), slowoNaZmiane.c_str(), zwrot));
+		string x(cppDllClass::changeAllTheWords(tekst[i].c_str(), slowoDoZamiany.c_str(), slowoNaZmiane.c_str(), zwrot));
 		tekst[i] = x;
 		cout << tekst[i] << endl;
 		cout << i << endl;
@@ -60,9 +64,9 @@ void __cdecl ThreadProcAsm(void * Args)
 int main(int argc, char* argv[])
 {
 	int liczbaWatkow;
-	clock_t t;
+	clock_t t = clock();
 	int kromka = 0;
-	t = clock();
+	
 	
 
 	if (argc >= 5){ // sprawdzenie ilosci arguemntow
@@ -94,19 +98,44 @@ int main(int argc, char* argv[])
 			vector < HANDLE > threads;
 			
 			if (strcmp(argv[1], "asm") == 0){
-				// uruchom te funkcje w watkach w asemblerze
-				cout << " ASM" << endl;
+				HMODULE lib;
+				cout << "kromka niebiblioteczna" << endl;
+				if ((lib = LoadLibrary(L"asmdll.dll")) != NULL) {
+
+					asmFunc = (asmFunction)GetProcAddress(lib, "asmFunction");
+					cout << "kromka bez asm funkcji" << endl;
+					if (asmFunc != NULL) {
+						cout << "kromkaasd" << endl;
+						/*t = clock();
+						for (int j = 0; j < liczbaWatkow; j++){
+							HANDLE hThread = (HANDLE)_beginthread(ThreadProcAsm, 1, NULL);
+							threads.push_back(hThread);
+						}
+						WaitForMultipleObjects(threads.size(), &threads[0], TRUE, 10000);
+						t = clock() - t;
+						plik.close();
+						plik.open(argv[2], ios::out);
+						for (int j = 0; j < tekst.size(); j++){
+							plik.write(tekst[j].c_str(), tekst[j].length());
+							plik.write("\n", 1);
+						}
+					*/}
+					FreeLibrary(lib);
+				}
 			}
 			else if (strcmp(argv[1], "cpp") == 0){
+				t = clock();
 				for (int j = 0; j < liczbaWatkow; j++){
 					HANDLE hThread = (HANDLE)_beginthread(ThreadProcCpp, 1, NULL);
 					threads.push_back(hThread);
 				}
-				WaitForMultipleObjects(threads.size(), &threads[0], TRUE, INFINITE);
+				WaitForMultipleObjects(threads.size(), &threads[0], TRUE,10000);
+				t = clock() - t;
 				plik.close();
 				plik.open(argv[2], ios::out);
 				for (int j = 0; j < tekst.size(); j++){
 					plik.write(tekst[j].c_str(), tekst[j].length());
+					plik.write("\n", 1);
 				}
 			}
 			else{
@@ -125,7 +154,7 @@ int main(int argc, char* argv[])
 		halp();
 	}
 
-	t = clock() - t;
+	
 	cout << "Czas w milisekundach to: " << t << endl;
 	system("PAUSE");
 	return 0;

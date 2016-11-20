@@ -1,3 +1,2 @@
-LIBRARY "asmdll"
-EXPORTS
-MyProc
+LIBRARY asmdll
+EXPORTS asmFunction
