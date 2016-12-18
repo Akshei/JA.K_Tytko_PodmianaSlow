@@ -18,13 +18,52 @@ resultLbl BYTE  "The new sentence is: ", 0
 
 asmFunction PROC strToOper: PTR BYTE, strToChange: PTR BYTE, strIWant: PTR BYTE
 
-	;mov rax,5
-	;add rax,2
-	kromka:
-	mov rax, strToOper
-	;PCMPEQB
-	;jmp kromka
-	ret
+	 push bp
+	        push bp,sp
+	        push ax
+	        push di
+	        push es
+	        push ds
+	        xor al,al
+	    les di,[bp+4]
+	    mov cx, 0xffff
+	    xor al,al
+	    repne SCAS
+	    mov ax, 0xffff
+	    sub ax, cx
+	    dec ax
+	    mov cx, ax
+	        pop ds
+	        pop es
+	        pop di
+	        pop ax
+	        pop bp
+start:
+	    mov ax, message1
+	    push ax
+	    mov ax, message2   
+	    push ax
+	    call strlength
+CompStr:
+	        push cx
+	    lds si, [bp+2]
+	    les di, [bp+4]
+	    repne CMPS
+	    dec di
+	    dec si
+	    cmp si,0
+	    je exit
+	    mov ax,1
+	        pop cx
+
+SubComp:
+	    repe CMPS
+	    cmp cx,0
+	    jne exit
+	    mov ax,1
+exit:
+	    mov ax,0
+	    mov ax, 0x4c00s
 
 asmFunction endp
 
