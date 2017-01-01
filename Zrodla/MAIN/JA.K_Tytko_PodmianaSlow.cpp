@@ -11,7 +11,7 @@
 #include <process.h>
 #include "../cppdll/cppdll.h"
 
-typedef DWORD(*asmFunction)();
+typedef DWORD(*asmFunction)(const char*, const char*, const char*, char*);
 
 using namespace std;
 
@@ -61,12 +61,17 @@ void __cdecl ThreadProcAsm(void * Args)
 	_endthread();
 }
 
+int zwroc3(const char *tekst, const char *doZmiany, const char *naCoZmienic, char* zwrot){
+	return 3;
+}
+
 int main(int argc, char* argv[])
 {
 	int liczbaWatkow;
 	clock_t t = clock();
 	int kromka = 0;
-	
+	char trom[255] = "";
+	zwroc3(slowoNaZmiane.c_str(), slowoNaZmiane.c_str(), slowoNaZmiane.c_str(), trom);
 	
 
 	if (argc >= 5){ // sprawdzenie ilosci arguemntow
@@ -100,28 +105,38 @@ int main(int argc, char* argv[])
 			if (strcmp(argv[1], "asm") == 0){
 				HMODULE lib;
 				cout << "kromka niebiblioteczna" << endl;
-				if ((lib = LoadLibrary(L"asmdll.dll")) != NULL) {
-
-					asmFunc = (asmFunction)GetProcAddress(lib, "asmFunction");
-					cout << "kromka bez asm funkcji" << endl;
-					if (asmFunc != NULL) {
-						cout << "kromkaasd" << endl;
-						/*t = clock();
-						for (int j = 0; j < liczbaWatkow; j++){
+				try{
+					if ((lib = LoadLibrary(L"asmdll.dll")) != NULL) {
+						cout << "kromka bez asm funkcjiaa" << endl;
+						asmFunc = (asmFunction)GetProcAddress(lib, "asmFunction");
+						cout << "kromka bez asm funkcji" << endl;
+						if (asmFunc != NULL) {
+							int kromka = 333;
+							DWORD x;
+							char zwrot[255] = "";
+							x = asmFunc("kromka kromka ", "ka","bum",zwrot);
+							cout << zwrot<< endl;
+							/*t = clock();
+							for (int j = 0; j < liczbaWatkow; j++){
 							HANDLE hThread = (HANDLE)_beginthread(ThreadProcAsm, 1, NULL);
 							threads.push_back(hThread);
-						}
-						WaitForMultipleObjects(threads.size(), &threads[0], TRUE, 10000);
-						t = clock() - t;
-						plik.close();
-						plik.open(argv[2], ios::out);
-						for (int j = 0; j < tekst.size(); j++){
+							}
+							WaitForMultipleObjects(threads.size(), &threads[0], TRUE, 10000);
+							t = clock() - t;
+							plik.close();
+							plik.open(argv[2], ios::out);
+							for (int j = 0; j < tekst.size(); j++){
 							plik.write(tekst[j].c_str(), tekst[j].length());
 							plik.write("\n", 1);
+							}
+							*/
 						}
-					*/}
-					FreeLibrary(lib);
+						FreeLibrary(lib);
+					}
 				}
+				catch( exception ex){
+						cout << "nie zaladowano dllki" << endl;
+					}
 			}
 			else if (strcmp(argv[1], "cpp") == 0){
 				t = clock();

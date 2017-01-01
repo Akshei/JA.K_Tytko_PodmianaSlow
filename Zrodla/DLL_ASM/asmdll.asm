@@ -1,151 +1,128 @@
-
-.STACK 4096
-
-.DATA
-prompt1 BYTE    "str to searching in: ", 0
-prompt2 BYTE    "word im looking for: ", 0
-prompt3 BYTE    "word i will replace: ", 0
-target  BYTE    80 DUP (?)
-key     BYTE    80 DUP (?)
-strSub  BYTE    80 DUP (?)
-trgtLength  DWORD   ?
-keyLength   DWORD   ?
-lastPosn    DWORD   ?
-strSubLen   DWORD   ?
-resultLbl BYTE  "The new sentence is: ", 0
-
+.data
 .code 
 
-asmFunction PROC strToOper: PTR BYTE, strToChange: PTR BYTE, strIWant: PTR BYTE
+Func PROC
 
-	 push bp
-	        push bp,sp
-	        push ax
-	        push di
-	        push es
-	        push ds
-	        xor al,al
-	    les di,[bp+4]
-	    mov cx, 0xffff
-	    xor al,al
-	    repne SCAS
-	    mov ax, 0xffff
-	    sub ax, cx
-	    dec ax
-	    mov cx, ax
-	        pop ds
-	        pop es
-	        pop di
-	        pop ax
-	        pop bp
-start:
-	    mov ax, message1
-	    push ax
-	    mov ax, message2   
-	    push ax
-	    call strlength
-CompStr:
-	        push cx
-	    lds si, [bp+2]
-	    les di, [bp+4]
-	    repne CMPS
-	    dec di
-	    dec si
-	    cmp si,0
-	    je exit
-	    mov ax,1
-	        pop cx
+	ret
+Func endp
 
-SubComp:
-	    repe CMPS
-	    cmp cx,0
-	    jne exit
-	    mov ax,1
-exit:
-	    mov ax,0
-	    mov ax, 0x4c00s
+asmFunction PROC
+	cld
+	push rdi ; save all non volatile registers
+	push rsi
+	push rbx
+	push rbp
+	push rsp
+	push r12
+	push r13
+	push r14
+	push r15
+	push r10
+	push r11
+	mov r10, r8
+	mov r11, r9
+	mov r8, rcx
+	mov r9, rdx
+	; FINDING LEGTH OF ALL STRINGS #########################################################################################################
+	
+	mov rdi, r8	; rdi <- address of main string
+	mov rcx, 0ffffffffffffffffh
+	mov rax, 0
+	repne scasb
+	neg rcx
+	dec rcx
+	dec rcx
+	mov r12,rcx ; length of main string
+
+	mov rdi, r9	; rdi <- address of string to find
+	mov rcx, 0ffffffffffffffffh
+	mov rax, 0
+	repne scasb
+	neg rcx
+	dec rcx
+	dec rcx
+	mov r13,rcx ; length of string to find
+
+	mov rdi, r10	; rdi <- address of string to change to
+	mov rcx, 0ffffffffffffffffh
+	mov rax, 0
+	repne scasb
+	neg rcx
+	dec rcx
+	dec rcx
+	mov r14,rcx ; length of string to change to
+
+	mov rdi, r11	; rdi <- address result string
+	mov rcx, 0ffffffffffffffffh
+	mov rax, 0
+	repne scasb
+	neg rcx
+	dec rcx
+	dec rcx
+	mov r15,rcx ; length of result string
+
+	; END FINDING LENGTH OF ALL STRINGS ###############################################################################################################
+try_once_more:
+	mov rax, [r9] ; rax <- substring to find
+	movd xmm1, rax ; vector instruction! xmm1 <- substring to find
+
+	pcmpistrm xmm1, [r8], 12 ; vector instruction!  which find substrings in string
+
+	movd rax, xmm0 ; vector instruction! accumulator <- result
+	mov rcx, rax
+
+	mov rax, 1
+	and rax, rcx
+
+	jz przepisz_literke
+	jmp wklej_stringa_R10
+
+przepisz_literke:
+	mov al,[r8]  ; al <- one letter from main string
+	mov [r11], al ; result string <- one letter from al
+	inc r8        ; increment pointer to main string
+	inc r11		  ; increment pointer to result string
+	jmp sprawdz_koniec
+
+wklej_stringa_R10:
+	mov rcx, r14
+	mov rbx, r10
+R10_loop:
+	mov al, [rbx]
+	mov [r11], al
+	inc rbx
+	inc r11
+	dec rcx
+	jz increment_R8
+	jmp R10_loop
+
+increment_R8:
+	mov rcx, r13
+R8_loop:
+	inc r8
+	dec rcx
+	jz sprawdz_koniec
+	jmp R8_loop
+
+sprawdz_koniec:
+	cmp byte ptr [r8],0
+	je lol
+	jmp try_once_more
+
+lol:
+	pop r11
+	pop r10
+	pop r15
+	pop r14
+	pop r13
+	pop r12
+	pop rsp
+	pop rbp
+	kromka:pop rbx
+	pop rsi
+	pop rdi
+	ret
 
 asmFunction endp
 
-;end
-
-_MainProc PROC
-    input prompt1, target, 80   ;input target string
-    lea eax, target             ;address of target
-    push eax                    ;parameter
-    call strlen                 ;strlen(target)
-    add esp, 4                  ;remove parameter
-    mov trgtLength, eax         ;save length of target
-    input prompt2, key, 80      ;input key string
-    lea eax, key                ;address of key
-    push eax                    ;parameter
-    call strlen                 ;strlen(key)
-    add esp, 4                  ;remove parameter
-    mov keyLength, eax          ;save length of key
-    input prompt3, strSub, 80   ;input word to search for
-            lea eax, strSub             ;address of key
-    push eax                    ;parameter
-    call strlen                 ;strlen(strSub)
-    add esp, 4                  ;remove parameter
-    mov strSubLen, eax          ;save length of key
-
-    mov eax, trgtLength
-    sub eax, keyLength
-    inc eax                     ;trgtLength - keyLength +1
-    mov lastPosn, eax
-    cld                         ;Left to Right comparison
-    mov eax, 1                  ;starting position
-
-    whilePosn:
-        cmp eax, lastPosn       ;position <= last_posn?
-        jnle endWhilePosn       ;exit if past last position
-
-        lea esi, target         ;address of target string
-        add esi, eax            ;add position
-        dec esi                 ;address of position to check
-        lea edi, key            ;address of key
-        mov ecx, keyLength      ;number of position to check
-        repe cmpsb              ;check
-        jz found                ;exit of success
-        inc eax                 ;increment position
-        jmp whilePosn           ;repeat
-
-    endWhilePosn:
-        output resultLbl, [esi] ;display new sentence
-        jmp quit
-
-    found:
-        sub edi, keyLength
-        mov ecx, strSubLen
-        lea esi, strSub
-        cld
-        rep movsb
-        inc eax
-        jmp whilePosn
-
-    quit:
-        mov     eax, 0  ; exit with return code 0
-        ret
-_MainProc ENDP
-
-
-strlen  PROC
-push ebp                    ;establish stack frame
-mov ebp, esp
-push ebx                    ;save EBX
-sub eax, eax                ;length := 0
-mov ebx, [ebp+8]            ;address of string
-
-whileChar:
-cmp BYTE PTR [ebx], 0       ;null byte?
-je endWhileChar             ;exit if so
-inc eax                     ;increment length
-inc ebx                     ;point at next character
-jmp whileChar               ;repeat
-
-endWhileChar:
-pop ebx                     ;restore registers
-pop ebp
-ret
-strlen  ENDP
-END
+end
