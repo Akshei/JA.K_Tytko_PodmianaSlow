@@ -42,13 +42,11 @@ int numberOfProcessorCores()
 
 void __cdecl ThreadProcCpp(void * Args)
 {
-	char zwrot[255] = ""; 
 	int i = index++;
 	while ( i < tekst.size()){
-		string x(cppDllClass::changeAllTheWords(tekst[i].c_str(), slowoDoZamiany.c_str(), slowoNaZmiane.c_str(), zwrot));
-		tekst[i] = x;
-		cout << tekst[i] << endl;
-		cout << i << endl;
+		char zwrot[255] = "";
+		asmFunc(tekst[i].c_str(), slowoDoZamiany.c_str(), slowoNaZmiane.c_str(), zwrot);
+		tekst[i] = zwrot;
 		i = index++;
 	}
 	_endthread();
@@ -56,13 +54,15 @@ void __cdecl ThreadProcCpp(void * Args)
 
 void __cdecl ThreadProcAsm(void * Args)
 {
+	
 	int i = index++;
-	cout << i << endl;
+	while (i < tekst.size()){
+		char zwrot[255] = "";
+		string x(cppDllClass::changeAllTheWords(tekst[i].c_str(), slowoDoZamiany.c_str(), slowoNaZmiane.c_str(), zwrot));
+		tekst[i] = x;
+		i = index++;
+	}
 	_endthread();
-}
-
-int zwroc3(const char *tekst, const char *doZmiany, const char *naCoZmienic, char* zwrot){
-	return 3;
 }
 
 int main(int argc, char* argv[])
@@ -71,8 +71,6 @@ int main(int argc, char* argv[])
 	clock_t t = clock();
 	int kromka = 0;
 	char trom[255] = "";
-	zwroc3(slowoNaZmiane.c_str(), slowoNaZmiane.c_str(), slowoNaZmiane.c_str(), trom);
-	
 
 	if (argc >= 5){ // sprawdzenie ilosci arguemntow
 		cout << "Dobra ilosc argumentow" << endl;
@@ -104,19 +102,14 @@ int main(int argc, char* argv[])
 			
 			if (strcmp(argv[1], "asm") == 0){
 				HMODULE lib;
-				cout << "kromka niebiblioteczna" << endl;
+				cout << "wywolano modul asm" << endl;
 				try{
 					if ((lib = LoadLibrary(L"asmdll.dll")) != NULL) {
-						cout << "kromka bez asm funkcjiaa" << endl;
+						cout << "udalo sie zaladowac asm dll" << endl;
 						asmFunc = (asmFunction)GetProcAddress(lib, "asmFunction");
-						cout << "kromka bez asm funkcji" << endl;
 						if (asmFunc != NULL) {
-							int kromka = 333;
-							DWORD x;
-							char zwrot[255] = "";
-							x = asmFunc("kromka kromka ", "ka","bum",zwrot);
-							cout << zwrot<< endl;
-							/*t = clock();
+							cout << "wczytano funkcje asmFunction" << endl;
+							t = clock();
 							for (int j = 0; j < liczbaWatkow; j++){
 							HANDLE hThread = (HANDLE)_beginthread(ThreadProcAsm, 1, NULL);
 							threads.push_back(hThread);
@@ -129,29 +122,31 @@ int main(int argc, char* argv[])
 							plik.write(tekst[j].c_str(), tekst[j].length());
 							plik.write("\n", 1);
 							}
-							*/
+							
 						}
 						FreeLibrary(lib);
 					}
 				}
 				catch( exception ex){
-						cout << "nie zaladowano dllki" << endl;
+						cout << "nie udalo sie zaladowac dllki asm" << endl;
 					}
 			}
 			else if (strcmp(argv[1], "cpp") == 0){
+				cout << "wywolano modul cpp" << endl;
 				t = clock();
 				for (int j = 0; j < liczbaWatkow; j++){
 					HANDLE hThread = (HANDLE)_beginthread(ThreadProcCpp, 1, NULL);
 					threads.push_back(hThread);
 				}
 				WaitForMultipleObjects(threads.size(), &threads[0], TRUE,10000);
-				t = clock() - t;
+				
 				plik.close();
 				plik.open(argv[2], ios::out);
 				for (int j = 0; j < tekst.size(); j++){
 					plik.write(tekst[j].c_str(), tekst[j].length());
 					plik.write("\n", 1);
 				}
+				t = clock() - t;
 			}
 			else{
 				cout << "Pierwszy argument bledny" << endl;

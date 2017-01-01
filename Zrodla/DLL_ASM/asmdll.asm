@@ -118,7 +118,7 @@ lol:
 	pop r12
 	pop rsp
 	pop rbp
-	kromka:pop rbx
+	pop rbx
 	pop rsi
 	pop rdi
 	ret
