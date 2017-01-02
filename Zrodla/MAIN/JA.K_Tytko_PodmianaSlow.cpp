@@ -45,8 +45,8 @@ void __cdecl ThreadProcCpp(void * Args)
 	int i = index++;
 	while ( i < tekst.size()){
 		char zwrot[255] = "";
-		asmFunc(tekst[i].c_str(), slowoDoZamiany.c_str(), slowoNaZmiane.c_str(), zwrot);
-		tekst[i] = zwrot;
+		string x(cppDllClass::changeAllTheWords(tekst[i].c_str(), slowoDoZamiany.c_str(), slowoNaZmiane.c_str(), zwrot));
+		tekst[i] = x;
 		i = index++;
 	}
 	_endthread();
@@ -58,8 +58,8 @@ void __cdecl ThreadProcAsm(void * Args)
 	int i = index++;
 	while (i < tekst.size()){
 		char zwrot[255] = "";
-		string x(cppDllClass::changeAllTheWords(tekst[i].c_str(), slowoDoZamiany.c_str(), slowoNaZmiane.c_str(), zwrot));
-		tekst[i] = x;
+		asmFunc(tekst[i].c_str(), slowoDoZamiany.c_str(), slowoNaZmiane.c_str(), zwrot);
+		tekst[i] = zwrot;
 		i = index++;
 	}
 	_endthread();
@@ -103,33 +103,29 @@ int main(int argc, char* argv[])
 			if (strcmp(argv[1], "asm") == 0){
 				HMODULE lib;
 				cout << "wywolano modul asm" << endl;
-				try{
-					if ((lib = LoadLibrary(L"asmdll.dll")) != NULL) {
-						cout << "udalo sie zaladowac asm dll" << endl;
-						asmFunc = (asmFunction)GetProcAddress(lib, "asmFunction");
-						if (asmFunc != NULL) {
-							cout << "wczytano funkcje asmFunction" << endl;
-							t = clock();
-							for (int j = 0; j < liczbaWatkow; j++){
-							HANDLE hThread = (HANDLE)_beginthread(ThreadProcAsm, 1, NULL);
-							threads.push_back(hThread);
-							}
-							WaitForMultipleObjects(threads.size(), &threads[0], TRUE, 10000);
-							t = clock() - t;
-							plik.close();
-							plik.open(argv[2], ios::out);
-							for (int j = 0; j < tekst.size(); j++){
+				if ((lib = LoadLibrary(L"asmdll.dll")) != NULL) {
+					cout << "udalo sie zaladowac asm dll" << endl;
+					asmFunc = (asmFunction)GetProcAddress(lib, "asmFunction");
+					if (asmFunc != NULL) {
+						cout << "wczytano funkcje asmFunction" << endl;
+						t = clock();
+						for (int j = 0; j < liczbaWatkow; j++){
+						HANDLE hThread = (HANDLE)_beginthread(ThreadProcAsm, 1, NULL);
+						threads.push_back(hThread);
+						}
+						WaitForMultipleObjects(threads.size(), &threads[0], TRUE, 10000);
+						t = clock() - t;
+						plik.close();
+						plik.open(argv[2], ios::out);
+						for (int j = 0; j < tekst.size(); j++){
 							plik.write(tekst[j].c_str(), tekst[j].length());
 							plik.write("\n", 1);
-							}
-							
 						}
-						FreeLibrary(lib);
+							
 					}
+					FreeLibrary(lib);
+					cout << " Uwolnione asm dll" << endl;
 				}
-				catch( exception ex){
-						cout << "nie udalo sie zaladowac dllki asm" << endl;
-					}
 			}
 			else if (strcmp(argv[1], "cpp") == 0){
 				cout << "wywolano modul cpp" << endl;
@@ -139,7 +135,6 @@ int main(int argc, char* argv[])
 					threads.push_back(hThread);
 				}
 				WaitForMultipleObjects(threads.size(), &threads[0], TRUE,10000);
-				
 				plik.close();
 				plik.open(argv[2], ios::out);
 				for (int j = 0; j < tekst.size(); j++){

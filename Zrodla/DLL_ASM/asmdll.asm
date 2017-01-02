@@ -87,7 +87,7 @@ przepisz_literke:
 wklej_stringa_R10:
 	mov rcx, r14
 	mov rbx, r10
-R10_loop:
+R10_loop:		
 	mov al, [rbx]
 	mov [r11], al
 	inc rbx
