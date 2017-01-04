@@ -52,15 +52,6 @@ asmFunction PROC
 	dec rcx
 	mov r14,rcx ; length of string to change to
 
-	mov rdi, r11	; rdi <- address result string
-	mov rcx, 0ffffffffffffffffh
-	mov rax, 0
-	repne scasb
-	neg rcx
-	dec rcx
-	dec rcx
-	mov r15,rcx ; length of result string
-
 	; END FINDING LENGTH OF ALL STRINGS ###############################################################################################################
 try_once_more:
 	mov rax, [r9] ; rax <- substring to find
@@ -70,7 +61,6 @@ try_once_more:
 
 	movd rax, xmm0 ; vector instruction! accumulator <- result
 	mov rcx, rax
-
 	mov rax, 1
 	and rax, rcx
 
